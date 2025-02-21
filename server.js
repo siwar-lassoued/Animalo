@@ -1,12 +1,20 @@
-const express = require('express')
-const app = express();
-const port=3000;
-app.use(express.json())
+const express = require('express');
+const mongoose = require('mongoose');
+require('dotenv').config();
+const userRoutes = require("./routes/userRoutes");
 
-app.get('/',(req,res)=>{
-    res.send({message:"Animalo"})
+const app = express();
+app.use(express.json());
+
+mongoose.connect(process.env.MONGO_URI)
+.then(()=>{
+    console.log('Connect to server database')
+}).catch(err=>{console.log('Error connecting to server database')
 })
 
-app.listen(port,()=>{
-    console.log(`listening on ${port}`)
+app.use("/users", userRoutes);
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT,()=>{
+    console.log('listening on port'+PORT);
 })
