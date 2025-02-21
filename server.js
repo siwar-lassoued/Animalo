@@ -7,6 +7,7 @@ dotenv.config();
 
 const userRoutes = require("./routes/userRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
 
 const app = express();
 
@@ -26,6 +27,8 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use("/users", userRoutes);
 app.use("/appointments", appointmentRoutes);
+app.use("/availabilities", availabilityRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

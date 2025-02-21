@@ -23,7 +23,7 @@ exports.getUserById = async (req, res) => {
   user ? res.json(user) : res.status(404).json({ message: "Utilisateur non trouvé" });
 };
 
-// Mettre à jour un utilisateur
+// MAJ un utilisateur
 exports.updateUser = async (req, res) => {
   const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
   user ? res.json(user) : res.status(404).json({ message: "Utilisateur non trouvé" });
