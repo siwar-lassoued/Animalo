@@ -1,36 +1,60 @@
 const User = require("../models/user.js");
-
-// Ajouter un utilisateur
-exports.createUser = async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
+const authenticate = require("../middleware/authenticate");
+const bcrypt = require('bcryptjs')
 // Obtenir tous les utilisateurs
 exports.getUsers = async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+    try {
+        const users = await User.find();
+        res.send(users);
+    } catch (error) {
+        res.status(500).send("Erreur serveur");
+    }
 };
 
 // Obtenir un utilisateur par ID
 exports.getUserById = async (req, res) => {
-  const user = await User.findById(req.params.id);
-  user ? res.json(user) : res.status(404).json({ message: "Utilisateur non trouvé" });
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        user ? res.send(user) : res.status(404).json({ message: "Utilisateur non trouvé" });
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
 };
 
-// MAJ un utilisateur
+// Mettre à jour un utilisateur 
 exports.updateUser = async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  user ? res.json(user) : res.status(404).json({ message: "Utilisateur non trouvé" });
+  try {
+      const { id } = req.params;
+      let { nom, email, motDePasse, rôle } = req.body;
+
+      // Vérifier si un mot de passe est fourni et le hasher
+      if (motDePasse) {
+          motDePasse = await bcrypt.hash(motDePasse, 10);
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+          id,
+          { nom, email, motDePasse, rôle },
+          { new: true }
+      );
+
+      updatedUser
+          ? res.send({ message: "Utilisateur mis à jour avec succès", user: updatedUser })
+          : res.status(404).json({ message: "Utilisateur non trouvé" });
+
+  } catch (error) {
+      res.status(400).send(error.message);
+  }
 };
 
-// Supprimer un utilisateur
+// Supprimer un utilisateur 
 exports.deleteUser = async (req, res) => {
-  const user = await User.findByIdAndDelete(req.params.id);
-  user ? res.json({ message: "Utilisateur supprimé" }) : res.status(404).json({ message: "Utilisateur non trouvé" });
+    try {
+        const { id } = req.params;
+        await User.findByIdAndDelete(id);
+        res.send("Utilisateur supprimé avec succès");
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
 };
