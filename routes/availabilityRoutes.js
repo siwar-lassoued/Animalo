@@ -6,6 +6,8 @@ const {
     updateAvailability, 
     deleteAvailability 
 } = require("../controllers/availabilityController");
+const authorize = require('../middleware/authorize'); 
+const authenticate = require("../middleware/authenticate");
 
 const router = express.Router();
 
@@ -20,8 +22,10 @@ const router = express.Router();
  * @swagger
  * /availabilities:
  *   post:
- *     summary: Ajouter une disponibilité
+ *     summary: Ajouter une disponibilité (admin et professionnel)
  *     tags: [Availabilities]
+ *     security:
+ *       - bearerAuth: []  // Appliquer l'authentification JWT
  *     requestBody:
  *       required: true
  *       content:
@@ -31,52 +35,55 @@ const router = express.Router();
  *             properties:
  *               professionnel:
  *                 type: string
- *                 description: ID du professionnel
+ *                 description: L'ID du professionnel
  *               date:
  *                 type: string
- *                 format: date
- *                 description: Date de la disponibilité (AAAA-MM-JJ)
+ *                 description: La date de la disponibilité
  *               heureDebut:
  *                 type: string
- *                 description: Heure de début (HH:mm)
+ *                 description: L'heure de début de la disponibilité
  *               heureFin:
  *                 type: string
- *                 description: Heure de fin (HH:mm)
+ *                 description: L'heure de fin de la disponibilité
  *     responses:
  *       201:
- *         description: Disponibilité créée avec succès
+ *         description: Disponibilité ajoutée avec succès
  *       400:
- *         description: Erreur de validation
+ *         description: Erreur de validation ou d'enregistrement
  */
-router.post("/", createAvailability);
+router.post("/", authenticate, authorize(['admin', 'professionnel']), createAvailability);
 
 /**
  * @swagger
  * /availabilities:
  *   get:
- *     summary: Récupérer toutes les disponibilités
+ *     summary: Récupérer toutes les disponibilités (admin uniquement)
  *     tags: [Availabilities]
+ *     security:
+ *       - bearerAuth: []  // Appliquer l'authentification JWT
  *     responses:
  *       200:
- *         description: Liste des disponibilités
+ *         description: Liste des disponibilités récupérée avec succès
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", getAvailabilities);
+router.get("/", authenticate, authorize(['admin']), getAvailabilities);
 
 /**
  * @swagger
  * /availabilities/{id}:
  *   get:
- *     summary: Récupérer une disponibilité par ID
+ *     summary: Récupérer une disponibilité spécifique (admin et professionnel)
  *     tags: [Availabilities]
+ *     security:
+ *       - bearerAuth: []  // Appliquer l'authentification JWT
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
+ *         description: ID de la disponibilité
  *         schema:
  *           type: string
- *         description: ID de la disponibilité
  *     responses:
  *       200:
  *         description: Disponibilité trouvée
@@ -85,21 +92,23 @@ router.get("/", getAvailabilities);
  *       500:
  *         description: Erreur serveur
  */
-router.get("/:id", getAvailabilityById);
+router.get("/:id", authenticate, authorize(['admin', 'professionnel'], true), getAvailabilityById);
 
 /**
  * @swagger
  * /availabilities/{id}:
  *   put:
- *     summary: Mettre à jour une disponibilité
+ *     summary: Mettre à jour une disponibilité (admin ou professionnel uniquement sur ses propres disponibilités)
  *     tags: [Availabilities]
+ *     security:
+ *       - bearerAuth: []  // Appliquer l'authentification JWT
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
+ *         description: ID de la disponibilité
  *         schema:
  *           type: string
- *         description: ID de la disponibilité
  *     requestBody:
  *       required: true
  *       content:
@@ -109,42 +118,44 @@ router.get("/:id", getAvailabilityById);
  *             properties:
  *               date:
  *                 type: string
- *                 format: date
+ *                 description: La date de la disponibilité
  *               heureDebut:
  *                 type: string
+ *                 description: L'heure de début de la disponibilité
  *               heureFin:
  *                 type: string
+ *                 description: L'heure de fin de la disponibilité
  *     responses:
  *       200:
- *         description: Disponibilité mise à jour
+ *         description: Disponibilité mise à jour avec succès
+ *       400:
+ *         description: Erreur de validation ou mise à jour
  *       404:
  *         description: Disponibilité non trouvée
- *       500:
- *         description: Erreur serveur
  */
-router.put("/:id", updateAvailability);
+router.put("/:id", authenticate, authorize(['admin', 'professionnel'], true), updateAvailability);
 
 /**
  * @swagger
  * /availabilities/{id}:
  *   delete:
- *     summary: Supprimer une disponibilité
+ *     summary: Supprimer une disponibilité (admin ou professionnel uniquement sur ses propres disponibilités)
  *     tags: [Availabilities]
+ *     security:
+ *       - bearerAuth: []  // Appliquer l'authentification JWT
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
+ *         description: ID de la disponibilité
  *         schema:
  *           type: string
- *         description: ID de la disponibilité
  *     responses:
  *       200:
- *         description: Disponibilité supprimée
+ *         description: Disponibilité supprimée avec succès
  *       404:
  *         description: Disponibilité non trouvée
- *       500:
- *         description: Erreur serveur
  */
-router.delete("/:id", deleteAvailability);
+router.delete("/:id", authenticate, authorize(['admin', 'professionnel'], true), deleteAvailability);
 
 module.exports = router;

@@ -1,58 +1,57 @@
 const express = require("express");
 const { createUser, getUsers, getUserById, updateUser, deleteUser } = require("../controllers/userController");
 const authenticate = require("../middleware/authenticate");
+const authorize = require("../middleware/authorize");
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Users
- *   description: API de gestion des utilisateurs
- */
 
 /**
  * @swagger
  * /users:
  *   get:
- *     summary: Récupérer la liste de tous les utilisateurs
+ *     summary: Récupérer tous les utilisateurs (admin uniquement)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste des utilisateurs récupérée avec succès.
- *       500:
- *         description: Erreur serveur.
+ *         description: Liste des utilisateurs récupérée avec succès
+ *       403:
+ *         description: Accès refusé (non admin)
  */
-router.get("/", getUsers);
+router.get("/", authenticate, authorize(['admin']), getUsers);
 
 /**
  * @swagger
  * /users/{id}:
  *   get:
- *     summary: Récupérer un utilisateur par son ID
+ *     summary: Récupérer un utilisateur par ID (admin ou l'utilisateur lui-même)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'utilisateur
+ *         description: ID de l'utilisateur à récupérer
  *     responses:
  *       200:
- *         description: Détails de l'utilisateur.
+ *         description: Détails de l'utilisateur
+ *       403:
+ *         description: Accès refusé
  *       404:
- *         description: Utilisateur non trouvé.
- *       500:
- *         description: Erreur serveur.
+ *         description: Utilisateur non trouvé
  */
-router.get("/:id", getUserById);
+router.get("/:id", authenticate, getUserById);
 
 /**
  * @swagger
  * /users/{id}:
  *   put:
- *     summary: Mettre à jour un utilisateur par ID
+ *     summary: Modifier un utilisateur (lui-même ou admin)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -62,35 +61,31 @@ router.get("/:id", getUserById);
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'utilisateur
+ *         description: ID de l'utilisateur à modifier
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nom:
- *                 type: string
- *               email:
- *                 type: string
- *               motDePasse:
- *                 type: string
+ *           example:
+ *             nom: "Nouveau Nom"
+ *             email: "nouveau.email@example.com"
+ *             motDePasse: "nouveaumotdepasse"
+ *             rôle: "client"
  *     responses:
  *       200:
- *         description: Utilisateur mis à jour avec succès.
+ *         description: Utilisateur mis à jour avec succès
+ *       403:
+ *         description: Accès refusé
  *       404:
- *         description: Utilisateur non trouvé.
- *       500:
- *         description: Erreur serveur.
+ *         description: Utilisateur non trouvé
  */
-router.put("/:id", updateUser);
+router.put("/:id", authenticate, updateUser);
 
 /**
  * @swagger
  * /users/{id}:
  *   delete:
- *     summary: Supprimer un utilisateur par ID
+ *     summary: Supprimer un utilisateur (admin uniquement)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -100,15 +95,16 @@ router.put("/:id", updateUser);
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'utilisateur
+ *         description: ID de l'utilisateur à supprimer
  *     responses:
  *       200:
- *         description: Utilisateur supprimé avec succès.
+ *         description: Utilisateur supprimé avec succès
+ *       403:
+ *         description: Accès refusé
  *       404:
- *         description: Utilisateur non trouvé.
- *       500:
- *         description: Erreur serveur.
+ *         description: Utilisateur non trouvé
  */
-router.delete("/:id", deleteUser);
+router.delete("/:id", authenticate, authorize(['admin']), deleteUser);
+
 
 module.exports = router;

@@ -6,21 +6,16 @@ const {
     updateAppointment, 
     deleteAppointment 
 } = require("../controllers/appointmentController");
+const authenticate = require("../middleware/authenticate");
+const authorize = require("../middleware/authorize");
 
 const router = express.Router();
 
 /**
  * @swagger
- * tags:
- *   name: Appointments
- *   description: Gestion des rendez-vous
- */
-
-/**
- * @swagger
  * /appointments:
  *   post:
- *     summary: Créer un nouveau rendez-vous
+ *     summary: Créer un nouveau rendez-vous (pour client uniquement)
  *     tags: [Appointments]
  *     requestBody:
  *       required: true
@@ -65,13 +60,13 @@ const router = express.Router();
  *       400:
  *         description: Erreur de validation des données
  */
-router.post("/", createAppointment);
+router.post("/", authenticate, authorize(['client','admin','professionnel']), createAppointment);
 
 /**
  * @swagger
  * /appointments:
  *   get:
- *     summary: Récupérer tous les rendez-vous
+ *     summary: Récupérer tous les rendez-vous (admin uniquement)
  *     tags: [Appointments]
  *     responses:
  *       200:
@@ -79,13 +74,13 @@ router.post("/", createAppointment);
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", getAppointments);
+router.get("/", authenticate, authorize(['admin']), getAppointments);
 
 /**
  * @swagger
  * /appointments/{id}:
  *   get:
- *     summary: Récupérer un rendez-vous par ID
+ *     summary: Récupérer un rendez-vous par ID (tout utilisateur ayant le droit d'accès)
  *     tags: [Appointments]
  *     parameters:
  *       - in: path
@@ -100,13 +95,13 @@ router.get("/", getAppointments);
  *       404:
  *         description: Rendez-vous non trouvé
  */
-router.get("/:id", getAppointmentById);
+router.get("/:id", authenticate, getAppointmentById);
 
 /**
  * @swagger
  * /appointments/{id}:
  *   put:
- *     summary: Mettre à jour un rendez-vous
+ *     summary: Mettre à jour un rendez-vous (admin ou professionnel uniquement)
  *     tags: [Appointments]
  *     parameters:
  *       - in: path
@@ -147,13 +142,13 @@ router.get("/:id", getAppointmentById);
  *       404:
  *         description: Rendez-vous non trouvé
  */
-router.put("/:id", updateAppointment);
+router.put("/:id", authenticate, authorize(['admin', 'professionnel'], true), updateAppointment);
 
 /**
  * @swagger
  * /appointments/{id}:
  *   delete:
- *     summary: Supprimer un rendez-vous
+ *     summary: Supprimer un rendez-vous (admin uniquement)
  *     tags: [Appointments]
  *     parameters:
  *       - in: path
@@ -168,6 +163,6 @@ router.put("/:id", updateAppointment);
  *       404:
  *         description: Rendez-vous non trouvé
  */
-router.delete("/:id", deleteAppointment);
+router.delete("/:id", authenticate, authorize(['admin'], true), deleteAppointment);
 
-module.exports = router
+module.exports = router;
