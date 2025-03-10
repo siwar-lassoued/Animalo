@@ -4,7 +4,8 @@ const {
     getAppointments, 
     getAppointmentById, 
     updateAppointment, 
-    deleteAppointment 
+    deleteAppointment, 
+    getCalendarEvents
 } = require("../controllers/appointmentController");
 const authenticate = require("../middleware/authenticate");
 const authorize = require("../middleware/authorize");
@@ -68,13 +69,63 @@ router.post("/", authenticate, authorize(['client','admin','professionnel']), cr
  *   get:
  *     summary: Récupérer tous les rendez-vous (admin uniquement)
  *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Liste des rendez-vous
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", authenticate, authorize(['admin']), getAppointments);
+router.get("/", getAppointments);
+
+/**
+ * @swagger
+ * /appointments/calendar-events:
+ *   get:
+ *     summary: Récupérer les rendez-vous formatés pour FullCalendar
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des rendez-vous au format FullCalendar
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: ID du rendez-vous
+ *                   title:
+ *                     type: string
+ *                     description: Titre du rendez-vous (nom du service)
+ *                   start:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Date et heure de début du rendez-vous
+ *                   end:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Date et heure de fin du rendez-vous
+ *                   client:
+ *                     type: string
+ *                     description: ID du client ayant pris le rendez-vous
+ *                   professionnel:
+ *                     type: string
+ *                     description: ID du professionnel concerné
+ *       401:
+ *         description: Non autorisé (token manquant ou invalide)
+ *       500:
+ *         description: Erreur serveur
+ */
+
+router.get("/calendar-events", authenticate,authorize(['admin','professionnel']), getCalendarEvents);
+
+
 
 /**
  * @swagger
@@ -164,5 +215,19 @@ router.put("/:id", authenticate, authorize(['admin', 'professionnel'], true), up
  *         description: Rendez-vous non trouvé
  */
 router.delete("/:id", authenticate, authorize(['admin'], true), deleteAppointment);
+
+/**
+ * @swagger
+ * /appointments/calendar-events:
+ *   get:
+ *     summary: Récupérer les rendez-vous formatés pour FullCalendar
+ *     tags: [Appointments]
+ *     responses:
+ *       200:
+ *         description: Liste des rendez-vous au format FullCalendar
+ *       500:
+ *         description: Erreur serveur
+ */
+
 
 module.exports = router;

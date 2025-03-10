@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendrier des Rendez-vous</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales-all.min.js"></script>
+</head>
+<body>
+    <h1>Calendrier des Rendez-vous</h1>
+    <div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'fr',
+        events: function(fetchInfo, successCallback, failureCallback) {
+            fetch('http://localhost:7000/appointments/calendar-events', {
+                headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NhMWY5MTk0OGRiOTA0NGE1Y2QyZTgiLCJyw7RsZSI6ImFkbWluIiwiaWF0IjoxNzQxNjM4MTcyLCJleHAiOjE3NDE2NDE3NzJ9.G5v0PcKw2_kJy-0_qjvyLtIcQOMbuSdi0Yaqo_iii6Q" } // Ajoute un token si nécessaire
+            })
+            .then(response => response.json())
+            .then(events => {
+                console.log("Événements reçus :", events); 
+                successCallback(events);
+            })
+            .catch(error => {
+                console.error("Erreur lors du chargement des événements :", error);
+                failureCallback(error);
+            });
+        }
+    });
+    calendar.render();
+});
+
+    </script>
+</body>
+</html>

@@ -25,7 +25,7 @@ const router = express.Router();
  *     summary: Ajouter une disponibilité (admin et professionnel)
  *     tags: [Availabilities]
  *     security:
- *       - bearerAuth: []  // Appliquer l'authentification JWT
+ *       - bearerAuth: [] 
  *     requestBody:
  *       required: true
  *       content:
@@ -60,7 +60,7 @@ router.post("/", authenticate, authorize(['admin', 'professionnel']), createAvai
  *     summary: Récupérer toutes les disponibilités (admin uniquement)
  *     tags: [Availabilities]
  *     security:
- *       - bearerAuth: []  // Appliquer l'authentification JWT
+ *       - bearerAuth: [] 
  *     responses:
  *       200:
  *         description: Liste des disponibilités récupérée avec succès
@@ -76,7 +76,7 @@ router.get("/", authenticate, authorize(['admin']), getAvailabilities);
  *     summary: Récupérer une disponibilité spécifique (admin et professionnel)
  *     tags: [Availabilities]
  *     security:
- *       - bearerAuth: []  // Appliquer l'authentification JWT
+ *       - bearerAuth: []  
  *     parameters:
  *       - name: id
  *         in: path
@@ -101,7 +101,7 @@ router.get("/:id", authenticate, authorize(['admin', 'professionnel'], true), ge
  *     summary: Mettre à jour une disponibilité (admin ou professionnel uniquement sur ses propres disponibilités)
  *     tags: [Availabilities]
  *     security:
- *       - bearerAuth: []  // Appliquer l'authentification JWT
+ *       - bearerAuth: []  
  *     parameters:
  *       - name: id
  *         in: path
@@ -142,7 +142,7 @@ router.put("/:id", authenticate, authorize(['admin', 'professionnel'], true), up
  *     summary: Supprimer une disponibilité (admin ou professionnel uniquement sur ses propres disponibilités)
  *     tags: [Availabilities]
  *     security:
- *       - bearerAuth: []  // Appliquer l'authentification JWT
+ *       - bearerAuth: []  
  *     parameters:
  *       - name: id
  *         in: path

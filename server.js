@@ -4,8 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
-
-dotenv.config();
+const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
@@ -13,6 +12,7 @@ const availabilityRoutes = require("./routes/availabilityRoutes");
 const authRoutes = require('./routes/auth');
 
 const app = express();
+dotenv.config();
 
 // Serve Swagger documentation
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
@@ -35,6 +35,10 @@ app.use('/auth', authRoutes);
 app.use("/users", userRoutes);
 app.use("/appointments", appointmentRoutes);
 app.use("/availabilities", availabilityRoutes);
+app.get("/calendar", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "calendar.html"));
+});
+
 
 
 const PORT = process.env.PORT || 3000;
