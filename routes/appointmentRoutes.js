@@ -5,7 +5,8 @@ const {
     getAppointmentById, 
     updateAppointment, 
     deleteAppointment, 
-    getCalendarEvents
+    getCalendarEvents,
+    cancelAppointment
 } = require("../controllers/appointmentController");
 const authenticate = require("../middleware/authenticate");
 const authorize = require("../middleware/authorize");
@@ -61,7 +62,7 @@ const router = express.Router();
  *       400:
  *         description: Erreur de validation des données
  */
-router.post("/", authenticate, authorize(['client','admin','professionnel']), createAppointment);
+router.post("/", authenticate, authorize(['client','admin']), createAppointment);
 
 /**
  * @swagger
@@ -77,55 +78,52 @@ router.post("/", authenticate, authorize(['client','admin','professionnel']), cr
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", getAppointments);
+router.get("/", authenticate, authorize(['admin','client','professionnel']),getAppointments);
 
-/**
- * @swagger
- * /appointments/calendar-events:
- *   get:
- *     summary: Récupérer les rendez-vous formatés pour FullCalendar
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Liste des rendez-vous au format FullCalendar
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                     description: ID du rendez-vous
- *                   title:
- *                     type: string
- *                     description: Titre du rendez-vous (nom du service)
- *                   start:
- *                     type: string
- *                     format: date-time
- *                     description: Date et heure de début du rendez-vous
- *                   end:
- *                     type: string
- *                     format: date-time
- *                     description: Date et heure de fin du rendez-vous
- *                   client:
- *                     type: string
- *                     description: ID du client ayant pris le rendez-vous
- *                   professionnel:
- *                     type: string
- *                     description: ID du professionnel concerné
- *       401:
- *         description: Non autorisé (token manquant ou invalide)
- *       500:
- *         description: Erreur serveur
- */
-
+// /**
+//  * @swagger
+//  * /appointments/calendar-events:
+//  *   get:
+//  *     summary: Récupérer les rendez-vous formatés pour FullCalendar
+//  *     tags: [Appointments]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     responses:
+//  *       200:
+//  *         description: Liste des rendez-vous au format FullCalendar
+//  *         content:
+//  *           application/json:
+//  *             schema:
+//  *               type: array
+//  *               items:
+//  *                 type: object
+//  *                 properties:
+//  *                   id:
+//  *                     type: string
+//  *                     description: ID du rendez-vous
+//  *                   title:
+//  *                     type: string
+//  *                     description: Titre du rendez-vous (nom du service)
+//  *                   start:
+//  *                     type: string
+//  *                     format: date-time
+//  *                     description: Date et heure de début du rendez-vous
+//  *                   end:
+//  *                     type: string
+//  *                     format: date-time
+//  *                     description: Date et heure de fin du rendez-vous
+//  *                   client:
+//  *                     type: string
+//  *                     description: ID du client ayant pris le rendez-vous
+//  *                   professionnel:
+//  *                     type: string
+//  *                     description: ID du professionnel concerné
+//  *       401:
+//  *         description: Non autorisé (token manquant ou invalide)
+//  *       500:
+//  *         description: Erreur serveur
+//  */
 router.get("/calendar-events", authenticate,authorize(['admin','professionnel']), getCalendarEvents);
-
-
 
 /**
  * @swagger
@@ -146,7 +144,7 @@ router.get("/calendar-events", authenticate,authorize(['admin','professionnel'])
  *       404:
  *         description: Rendez-vous non trouvé
  */
-router.get("/:id", authenticate, getAppointmentById);
+router.get("/:id", authenticate,authorize(['admin', 'professionnel', 'client']), getAppointmentById);
 
 /**
  * @swagger
@@ -218,16 +216,28 @@ router.delete("/:id", authenticate, authorize(['admin'], true), deleteAppointmen
 
 /**
  * @swagger
- * /appointments/calendar-events:
- *   get:
- *     summary: Récupérer les rendez-vous formatés pour FullCalendar
+ * /appointments/{id}/cancel:
+ *   put:
+ *     summary: Annuler un rendez-vous (admin, professionnel ou client autorisé)
  *     tags: [Appointments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du rendez-vous à annuler
  *     responses:
  *       200:
- *         description: Liste des rendez-vous au format FullCalendar
+ *         description: Rendez-vous annulé avec succès
+ *       403:
+ *         description: Accès non autorisé
+ *       404:
+ *         description: Rendez-vous non trouvé
  *       500:
  *         description: Erreur serveur
  */
 
+router.put("/:id/cancel", authenticate, authorize(['admin', 'professionnel', 'client']), cancelAppointment);
 
 module.exports = router;

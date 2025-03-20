@@ -20,7 +20,7 @@
         locale: 'fr',
         events: function(fetchInfo, successCallback, failureCallback) {
             fetch('http://localhost:7000/appointments/calendar-events', {
-                headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2NhMWY5MTk0OGRiOTA0NGE1Y2QyZTgiLCJyw7RsZSI6ImFkbWluIiwiaWF0IjoxNzQxNjM4MTcyLCJleHAiOjE3NDE2NDE3NzJ9.G5v0PcKw2_kJy-0_qjvyLtIcQOMbuSdi0Yaqo_iii6Q" } // Ajoute un token si nécessaire
+                headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2QwMDUzNjM0NTZmMzIzNTVkZmU4M2EiLCJyw7RsZSI6ImFkbWluIiwiaWF0IjoxNzQxNjg2MDcxLCJleHAiOjE3NDE3NzI0NzF9.qbVBy0yzMxJnROUC0Sa7_aR4-HLaSbZ66DDO7vmrHDI" } // Ajoute un token si nécessaire
             })
             .then(response => response.json())
             .then(events => {

@@ -1,41 +1,153 @@
 const Appointment = require("../models/appointment");
+const { sendEmail } = require('../emailService');
+const moment = require("moment");
+const User = require ('../models/user')
 
-// Ajouter un rendez-vous
 exports.createAppointment = async (req, res) => {
   try {
     let { date } = req.body;
 
-    // Vérifier si la date est au format JJ/MM/AAA
-    // Vérifier si la date est au format JJ/MM/AAAA
-if (typeof date === 'string' && date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-  const [day, month, year] = date.split('/');
-  
-  const dayNum = parseInt(day, 10);
-  const monthNum = parseInt(month, 10);
-  const fullYear = parseInt(year, 10);
-  
-  if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12) {
-    return res.status(400).json({ error: "Valeurs de jour ou mois invalides" });
-  }
-  
-  // Créer une date valide (mois en JavaScript est 0-indexé)
-  const dateObj = new Date(fullYear, monthNum - 1, dayNum, 12, 0, 0);
-
-  // Vérifier si la date est correcte et pas dans le passé
-  if (dateObj.getDate() !== dayNum || dateObj.getMonth() !== monthNum - 1 || dateObj < new Date()) {
-    return res.status(400).json({ error: "Date invalide ou dans le passé" });
-  }
-
-  req.body.date = dateObj;
-}
-
+    if (typeof date === "string" && moment(date, "DD/MM/YYYY", true).isValid()) {
+      const dateObj = moment(date, "DD/MM/YYYY").toDate(); 
     
+      if (moment(dateObj).isBefore(moment().startOf("day"))) {
+        return res.status(400).json({ error: "Date invalide ou dans le passé" });
+      }
     
+      if (moment(dateObj).day() === 0) {
+        return res.status(400).json({ error: "Les rendez-vous ne sont pas disponibles le dimanche" });
+      }
+    
+      if (moment(dateObj).isAfter(moment().add(6, "months"))) {
+        return res.status(400).json({ error: "Les rendez-vous ne peuvent pas être réservés à plus de 6 mois" });
+      }
+    
+      req.body.date = dateObj;
+    } else {
+      return res.status(400).json({ error: "Format de date invalide, utilisez JJ/MM/AAAA" });
+    }
+
     const appointment = new Appointment(req.body);
     await appointment.save();
+
+    // Récupérer les emails du client et du professionnel
+    const clientUser = await User.findById(appointment.client);
+    const professionalUser = await User.findById(appointment.professionnel);
+
+    if (clientUser && professionalUser) {
+      // Envoyer un e-mail de confirmation au client
+      sendEmail(
+        clientUser.email,
+        "Confirmation de votre rendez-vous",
+        `Bonjour ${clientUser.nom}, votre rendez-vous pour ${appointment.service} avec ${professionalUser.nom} le ${new Date(appointment.date).toLocaleString()} a bien été enregistré.`
+      );
+
+      // Envoyer un e-mail de notification au professionnel
+      sendEmail(
+        professionalUser.email,
+        "Nouveau rendez-vous",
+        `Bonjour ${professionalUser.nom}, un rendez-vous pour ${appointment.service} avec ${clientUser.nom} a été pris pour le ${new Date(appointment.date).toLocaleString()}.`
+      );
+    }
+
     res.status(201).json(appointment);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Erreur lors de la création du rendez-vous :", error);
+    res.status(500).json({ error: "Erreur interne du serveur" });
+  }
+};
+
+// Modifier un rendez-vous
+exports.updateAppointment = async (req, res) => {
+  try {
+    const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Rendez-vous non trouvé" });
+    }
+
+    // Récupérer les emails du client et du professionnel
+    const clientUser = await User.findById(appointment.client);
+    const professionalUser = await User.findById(appointment.professionnel);
+
+    if (clientUser && professionalUser) {
+      // Envoyer un e-mail au client
+      sendEmail(
+        clientUser.email,
+        "Mise à jour de votre rendez-vous",
+        `Bonjour ${clientUser.nom}, votre rendez-vous pour ${appointment.service} avec ${professionalUser.nom} a été mis à jour. Nouvelle date : ${new Date(appointment.date).toLocaleString()}.`
+      );
+
+      // Envoyer un e-mail au professionnel
+      sendEmail(
+        professionalUser.email,
+        "Un rendez-vous a été modifié",
+        `Bonjour ${professionalUser.nom}, le rendez-vous avec ${clientUser.nom} pour ${appointment.service} a été mis à jour. Nouvelle date : ${new Date(appointment.date).toLocaleString()}.`
+      );
+    }
+
+    res.json(appointment);
+  } catch (error) {
+    console.error("Erreur lors de la modification du rendez-vous :", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Annuler un rendez-vous
+exports.cancelAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findById(id);
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Rendez-vous non trouvé" });
+    }
+
+    appointment.statut = "annulé";
+    await appointment.save();
+
+    // Récupérer les emails du client et du professionnel
+    const clientUser = await User.findById(appointment.client);
+    const professionalUser = await User.findById(appointment.professionnel);
+
+    if (clientUser && professionalUser) {
+      // Envoyer un e-mail d’annulation au client
+      sendEmail(
+        clientUser.email,
+        "Annulation de votre rendez-vous",
+        `Bonjour ${clientUser.nom}, votre rendez-vous pour ${appointment.service} avec ${professionalUser.nom} le ${new Date(appointment.date).toLocaleString()} a été annulé.`
+      );
+
+      // Envoyer un e-mail d’annulation au professionnel
+      sendEmail(
+        professionalUser.email,
+        "Un rendez-vous a été annulé",
+        `Bonjour ${professionalUser.nom}, le rendez-vous pour ${appointment.service} avec ${clientUser.nom} prévu le ${new Date(appointment.date).toLocaleString()} a été annulé.`
+      );
+    }
+
+    res.json({ message: "Rendez-vous annulé avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de l'annulation du rendez-vous :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+// Tester l'envoi d'un email
+exports.testEmail = async (req, res) => {
+  try {
+    const { email, subject, message } = req.body;
+
+    if (!email || !subject || !message) {
+      return res.status(400).json({ error: "Email, sujet et message sont requis." });
+    }
+
+    // Envoyer l'email de test
+    await sendEmail(email, subject, message);
+
+    res.status(200).json({ message: "E-mail de test envoyé avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'e-mail de test :", error);
+    res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail de test." });
   }
 };
 
@@ -49,6 +161,7 @@ exports.getAppointments = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la récupération des rendez-vous" });
   }
 };
+
 //Obtenir tous les rendez-vous dans le calendrier
 exports.getCalendarEvents = async (req, res) => {
   try {
@@ -68,20 +181,23 @@ exports.getCalendarEvents = async (req, res) => {
       return res.status(404).json({ message: "Aucun rendez-vous trouvé" });
     }
 
-    const events = appointments.map(appt => {
-      if (!appt || !appt.statut || !appt.date || !appt.service || !appt.animal) {
-        console.warn("Données invalides pour un rendez-vous :", appt);
-        return null;
-      }
-    
-      return {
-        id: appt._id,
-        title: `RDV - ${appt.service} (${appt.animal})`,
-        start: appt.date,
-        backgroundColor: appt.statut === "confirmé" ? "#28a745" : appt.statut === "annulé" ? "#dc3545" : "#ffc107",
-        borderColor: "#000"
-      };
-    }).filter(event => event !== null);
+    const events = appointments
+  .map(appt => {
+    if (!appt || !appt.statut || !appt.date || !appt.service || !appt.animal) {
+      console.warn("Rendez-vous ignoré pour données invalides :", appt?._id);
+      return null;
+    }
+    return {
+      id: appt._id,
+      title: `RDV - ${appt.service} (${appt.animal})`,
+      start: appt.date,
+      backgroundColor: appt.statut === "confirmé" ? "#28a745" :
+                      appt.statut === "annulé" ? "#dc3545" : "#ffc107",
+      borderColor: "#000"
+    };
+  })
+  .filter(event => event !== null);
+
 
     res.json(events);
   } catch (error) {
@@ -100,15 +216,6 @@ exports.getAppointmentById = async (req, res) => {
   }
 };
 
-// Mettre à jour un rendez-vous
-exports.updateAppointment = async (req, res) => {
-  try {
-    const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    appointment ? res.json(appointment) : res.status(404).json({ message: "Rendez-vous non trouvé" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 // Supprimer un rendez-vous
 exports.deleteAppointment = async (req, res) => {
